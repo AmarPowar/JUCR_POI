@@ -7,6 +7,7 @@ const PORT = 3005;
 // Middleware to parse JSON requests
 app.use(express.json());
 
+//Applicaiton Health Check API
 app.get('/health_check_api', (req, res) => {
   const healthCheck = {
     uptime: `${Math.floor(process.uptime())} seconds`,
