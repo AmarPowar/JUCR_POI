@@ -1,25 +1,28 @@
-import { Response, NextFunction } from 'express';
-import { fetchPOIData, savePOIsToDB, } from '../services/openChargeMap.service';
-import logger from '../utils/logger';
-import { connectToDatabase } from '../db/connection';
-import { config } from '../config';
-import pLimit from 'p-limit';
-import { IFilters } from '../utils/import.interface';
+import { Response, NextFunction } from "express";
+import {
+  fetchPOIData,
+  processInBatches,
+} from "../services/openChargeMap.service";
+import logger from "../utils/logger";
+import { connectToDatabase } from "../db/connection";
+import { config } from "../config";
+import pLimit from "p-limit";
+import { IFilters } from "../utils/import.interface";
 
 /**
  * Controller function for handling the import data request.
- *
- * This function processes the validated request body containing filter criteria
- * and performs the necessary operations to handle the import data workflow.
- * 
  * @param req  : { body: { filters: IFilters; }
  * @param res
- * @param next 
+ * @param next
  * @returns A Promise that resolves when the function completes its operation.
  */
-export const importPOIData = async (req: { body: { filters: IFilters; }; }, res: Response, next: NextFunction): Promise<void> => {
+export const importPOIData = async (
+  req: { body: { filters: IFilters } },
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    // Connect to DB 
+    // Connect to DB
     await connectToDatabase();
     // This defines the maximum number of concurrent operations that can run at a time.
     const limit = config.CONCURRENCY_LIMIT;
@@ -27,36 +30,49 @@ export const importPOIData = async (req: { body: { filters: IFilters; }; }, res:
     const limitConcurrency = pLimit(limit);
 
     const { filters } = req.body;
-    logger.info('filters for POI service .....', filters);
-    logger.info('Starting POI data import process...');
+    logger.info("filters for POI service .....", filters);
+    logger.info("Starting POI data import process...");
 
-    let offset = filters.offset as number;
+    let page = filters.page as number;
     let batchSize = filters.maxresults as number;
     let hasMoreData = true;
-    let hardStop = filters.hardStop as number
-
+    // let hardStop = filters.hardStop as number;
+    // Loop to fetch and process Points of Interest (POIs) data in batches until no more data is available.
+    let allPOIs: any[] = [];
     while (hasMoreData) {
-      logger.info(`Fetching POIs with offset ${filters.offset}`);
+      logger.info(`Fetching POIs with page ${filters.page}`);
+      // Fetch a batch of POIs data based on the current filters and page.
       const pois = await fetchPOIData(filters);
       if (pois.length) {
-        await limitConcurrency(() => savePOIsToDB(pois));
-        offset += batchSize
+        // POIs data save operation into database
+
+        allPOIs.push(...pois);
+        logger.info(`allPOIs Size ${allPOIs.length}`);
+
+        if (allPOIs.length > 50) {
+          await processInBatches(allPOIs, limit);
+          allPOIs = [];
+        }
+        page++;
+        filters.page = page;
       } else {
         hasMoreData = false;
+        break;
       }
-
     }
+    // Send Respose with current status
     const importPoisStatus = {
       batchSize,
-      offset,
-      hardStop
-    }
-    logger.info('POI data import process completed successfully');
+      page,
+      // hardStop,
+    };
+    logger.info("POI data import process completed successfully");
     res.status(200).send({
-      message: 'POI data import process completed successfully', importPoisStatus
+      message: "POI data import process completed successfully",
+      importPoisStatus,
     });
   } catch (error) {
-    logger.error('Error during POI data import:', error);
-    res.status(500).send('Error occurs while importing data');
+    logger.error("Error during POI data import:", error);
+    res.status(500).send("Error occurs while importing data");
   }
 };

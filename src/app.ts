@@ -1,10 +1,23 @@
 
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
 
 
 const app = express();
+
+// rate limiter middleware
+const limiter = rateLimit({
+  windowMs: 30 * 1000, // 30 seconds
+  max: 30, // Limit each IP to 30 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  headers: true, // Adds RateLimit headers to the response
+});
+
+// Apply rate limiter to all API routes
+app.use(limiter);
+
 
 // set security HTTP headers
 app.use(helmet());

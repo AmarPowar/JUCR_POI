@@ -7,7 +7,7 @@ import Joi, { ObjectSchema } from 'joi';
 export const importPOIDataValidator = {
     body: Joi.object({
         filters: Joi.object({
-            offset: Joi.number().required(),
+            page: Joi.number().required(),
             countrycode: Joi.string().optional(),
             compact: Joi.boolean().optional(),
             verbose: Joi.boolean().optional(),
@@ -15,7 +15,6 @@ export const importPOIDataValidator = {
             opendata: Joi.boolean().optional(),
             distance: Joi.number().optional(),
             maxresults: Joi.number().optional(),
-            hardStop: Joi.number().optional()
         }).required(),
     }),
 };
