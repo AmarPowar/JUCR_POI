@@ -1,11 +1,11 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config();
 
 export const config = {
-  port: process.env.PORT || 4000,
-  mongoURI: process.env.MONGO_URI || 'mongodb://user:password@localhost:27017/openChargeMap?authSource=admin',
-  openChargeMapAPIKey: process.env.OPENCHARGEMAP_API_KEY || 'ff82541f-c8d1-4507-be67-bd07e3259c4e',
-  openChargeMapBaseURL: 'https://api.openchargemap.io/v3/',
-  CONCURRENCY_LIMIT : 10
+  port: process.env.PORT as string,
+  mongoURI: process?.env?.MONGO_URI as string ,
+  openChargeMapAPIKey: process.env.OPENCHARGEMAP_API_KEY as string,
+  openChargeMapBaseURL: process.env.OPEN_CHARGE_MAP_BASE_URL as string,
+  CONCURRENCY_LIMIT: process.env.CONCURRENCY_LIMIT as string,
 };

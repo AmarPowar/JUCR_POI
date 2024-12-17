@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Import POI Application Service
+  app:
+    build: .
+    container_name: data-import-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URL=mongodb://user:password@mongodb:27017/poi_db?authSource=admin
+    volumes:
+      - .:/app # Mounts the current directory to /app in the container
+    depends_on:
+      - mongo # Ensures MongoDB starts before the app
+
+  # MongoDB Service
+  mongo:
+    image: mongo:latest
+    container_name: mongo-db
+    ports:
+      - "27017:27017" # Exposes MongoDB on port 27017
+    volumes:
+      - mongo_data:/data/db # Persist data in Docker volume
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=poi_db
+
+# Volumes to persist MongoDB data
+volumes:
+  mongo_data:

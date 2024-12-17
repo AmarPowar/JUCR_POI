@@ -4,6 +4,7 @@ import { config } from "../config";
 import { IFilters } from "../utils/import.interface";
 import POIModel from "../db/models/poiModel";
 import { v4 as uuidv4 } from "uuid";
+import pLimit from "p-limit";
 
 /**
  *  Function to fetch Points of Interest (POI) data from an external API based on given filters.
@@ -48,12 +49,11 @@ export const savePOIsToDB = async (pois: any[]) => {
     ...poi,
   }));
   try {
-    const Result = await POIModel.insertMany(transformedPOIs, {
+    const result = await POIModel.insertMany(transformedPOIs, {
       ordered: false,
     });
-    logger.info(
-      `${transformedPOIs.length} POIs saved to MongoDB`
-    );
+    logger.info(`${transformedPOIs.length} POIs saved to MongoDB`);
+    return result;
   } catch (error) {
     logger.error("Error saving POIs to MongoDB:", error);
     if (error) {
@@ -76,18 +76,18 @@ export const callOpenChargeMapBaseAPI = async (
   return response;
 };
 
-
-
-export const processInBatches = async (pois: any[], concurrencyLimit: number) => {
-  const batchSize = Math.ceil(pois.length / concurrencyLimit);
-  logger.info(
-    ` batch size ${batchSize}`
-  );
+export const processInBatches = async (
+  pois: any[],
+  limit: number,
+  limitConcurrency:pLimit.Limit
+) => {
+  const batchSize = Math.ceil(pois.length / limit);
+  logger.info(` batch size ${batchSize}`);
   const batchPromises = [];
-  
-  for (let i = 0; i < concurrencyLimit; i++) {
+
+  for (let i = 0; i < limit; i++) {
     const batch = pois.slice(i * batchSize, (i + 1) * batchSize);
-    batchPromises.push(savePOIsToDB(batch)); // Insert POIs in batches
+    batchPromises.push(limitConcurrency(() => savePOIsToDB(batch))); // Insert POIs in batches
   }
 
   await Promise.all(batchPromises);

@@ -3,6 +3,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import { setupSwagger } from './doc/swagger';
 
 
 const app = express();
@@ -17,6 +18,9 @@ const limiter = rateLimit({
 
 // Apply rate limiter to all API routes
 app.use(limiter);
+
+// Set up Swagger
+setupSwagger(app);
 
 
 // set security HTTP headers
