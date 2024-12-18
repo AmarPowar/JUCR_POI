@@ -59,6 +59,7 @@ export const savePOIsToDB = async (pois: any[]) => {
     if (error) {
       logger.error("Duplicate key errors occurred for some entries.");
     }
+    throw error;
   }
 };
 
@@ -79,7 +80,7 @@ export const callOpenChargeMapBaseAPI = async (
 export const processInBatches = async (
   pois: any[],
   limit: number,
-  limitConcurrency:pLimit.Limit
+  limitConcurrency: pLimit.Limit
 ) => {
   const batchSize = Math.ceil(pois.length / limit);
   logger.info(` batch size ${batchSize}`);
